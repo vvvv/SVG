@@ -602,7 +602,7 @@ namespace Svg
                 throw new ArgumentNullException("graphics");
             }
 
-            using (var renderer = SvgRenderer.FromGraphics(graphics))
+            using (var renderer = SvgRenderer.FromGraphics(graphics, size.HasValue ? size.Value : this.Bounds.Size))
             {
                 var boundable = size.HasValue ? (ISvgBoundable)new GenericBoundable(0, 0, size.Value.Width, size.Value.Height) : this;
                 this.Draw(renderer, boundable);

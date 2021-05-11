@@ -1,3 +1,6 @@
+﻿using System;
+using System.Drawing;
+
 namespace Svg
 {
     /// <summary>
@@ -69,6 +72,31 @@ namespace Svg
         public override SvgElement DeepCopy()
         {
             return DeepCopy<SvgMask>();
+        }
+
+        /// <summary>
+        /// Renders the mask to a bitmap.
+        /// </summary>
+        /// <param name="renderer">The current renderer.</param>
+        /// <returns>A <see cref="Bitmap"/> object.</returns>
+        public Bitmap RenderMask(ISvgRenderer renderer)
+        {
+            var boundable = renderer.GetBoundable();
+
+            var maskBitmap = new Bitmap((int)Math.Round(renderer.RenderSize.Width), (int)Math.Round(renderer.RenderSize.Height));
+
+            var graphics = Graphics.FromImage(maskBitmap);
+            graphics.Transform = renderer.Transform.Clone();
+            graphics.Clear(System.Drawing.Color.Black);
+
+            using (var maskRenderer = SvgRenderer.FromGraphics(graphics, renderer.RenderSize))
+            {
+                maskRenderer.SetBoundable(boundable);
+
+                RenderElement(maskRenderer);
+            }
+
+            return maskBitmap;
         }
     }
 }

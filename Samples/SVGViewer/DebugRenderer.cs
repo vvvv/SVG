@@ -110,12 +110,33 @@ namespace SVGViewer
             }
         }
 
+        public SizeF RenderSize
+        {
+            get
+            {
+                return new SizeF(0, 0);
+            }
+        }
+
         public void Dispose()
         {
             if (_clip != null)
                 _clip.Dispose();
             if (_transform != null)
                 _transform.Dispose();
+        }
+
+        public Bitmap GetMask()
+        {
+            return null;
+        }
+
+        public void SetMask(Bitmap mask)
+        {
+        }
+
+        public void DisposeMask()
+        {
         }
     }
 }

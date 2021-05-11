@@ -6,6 +6,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
 using System.Xml;
+using System.Runtime.InteropServices;
 
 namespace Svg.UnitTests
 {
@@ -201,6 +202,20 @@ namespace Svg.UnitTests
         }
 
         /// <summary>
+        /// Gets a bitmap from resource.
+        /// </summary>
+        /// <param name="resourcePath">Resource path.</param>
+        /// <returns>A <see cref="Bitmap"/> object.</returns>
+        protected virtual Bitmap GetBitmapFromResource(string resourcePath)
+        {
+            var fullPath = GetFullResourceString(resourcePath);
+            using (var stream = GetResourceStream(fullPath))
+            {
+                return new Bitmap(Image.FromStream(stream));
+            }
+        }
+
+        /// <summary>
         /// Load, draw and check svg file.
         /// </summary>
         /// <param name="xml">Svg file data.</param>
@@ -274,62 +289,83 @@ namespace Svg.UnitTests
         protected virtual bool ImagesAreEqual(Bitmap img1, Bitmap img2, out float imgEqualPercentage)
         {
             Bitmap imgDiff; // To ignore.
-            return ImagesAreEqual(img1, img2, out imgEqualPercentage, out imgDiff);
+            return ImagesAreEqual(img1, img2, 0, out imgEqualPercentage, out imgDiff);
         }
 
         /// <summary>
         /// Compare Images.
         /// </summary>
-        /// <param name="img1">Image 1.</param>
-        /// <param name="img2">Image 2.</param>
+        /// <param name="image1">Image 1.</param>
+        /// <param name="image2">Image 2.</param>
+        /// <param name="allowedDifference">The difference allowed for each component (R, G, B, A). This is required to be set experimentally as the renders might be slightly different for each target - probably due to different anti-aliasing algorithms or settings.</param>
         /// <param name="imgEqualPercentage">Image equal value in percentage. 0.0% == completely unequal. 100.0% == completely equal.</param>
-        /// <param name="imgDiff">Image with red pixel where <paramref name="img1"/> and <paramref name="img2"/> are unequal.</param>
+        /// <param name="diffImage">Image with red pixel where <paramref name="image1"/> and <paramref name="image2"/> are unequal.</param>
         /// <returns>If images are completely equal: true; otherwise: false</returns>
-        protected virtual bool ImagesAreEqual(Bitmap img1, Bitmap img2, out float imgEqualPercentage, out Bitmap imgDiff)
+        protected virtual bool ImagesAreEqual(Bitmap image1, Bitmap image2, int allowedDifference, out float imgEqualPercentage, out Bitmap diffImage)
         {
             // Defaults.
             var diffColor = Color.Red;
 
             // Reset.
             imgEqualPercentage = 0;
-            imgDiff = null;
+            diffImage = null;
 
             // Requirements.
-            if (img1 == null)
+            if (image1 == null)
                 return false;
-            if (img2 == null)
+            if (image2 == null)
                 return false;
-            if (img1.Size.Width < 1 && img1.Height < 1)
+            if (image1.Size.Width < 1 && image1.Height < 1)
                 return false;
-            if (!img1.Size.Equals(img2.Size))
+            if (!image1.Size.Equals(image2.Size))
                 return false;
 
-            // Compare bitmaps.
-            imgDiff = new Bitmap(img1.Size.Width, img1.Size.Height);
+            diffImage = new Bitmap(image1.Width, image1.Height, PixelFormat.Format32bppArgb);
+
+            var image1Data = image1.LockBits(new Rectangle(0, 0, image1.Width, image1.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            var image2Data = image2.LockBits(new Rectangle(0, 0, image2.Width, image2.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            var diffImageData = diffImage.LockBits(new Rectangle(0, 0, diffImage.Width, diffImage.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+
+            var image1Bytes = new byte[image1Data.Stride * image1.Height];
+            var image2Bytes = new byte[image2Data.Stride * image2.Height];
+            var diffImageBytes = new byte[diffImageData.Stride * diffImage.Height];
+
+            Marshal.Copy(image1Data.Scan0, image1Bytes, 0, image1Bytes.Length);
+            Marshal.Copy(image2Data.Scan0, image2Bytes, 0, image2Bytes.Length);
+            Marshal.Copy(diffImageData.Scan0, diffImageBytes, 0, diffImageBytes.Length);
+
             int diffPixelCount = 0;
-            for (int i = 0; i < img1.Width; ++i)
+
+            for (var pixelIndex = 0; pixelIndex < image1Bytes.Length; pixelIndex += 4)
             {
-                for (int j = 0; j < img1.Height; ++j)
+                for (var componentIndex = 0; componentIndex < 4; componentIndex++)
                 {
-                    Color color;
-                    if ((color = img1.GetPixel(i, j)) == img2.GetPixel(i, j))
+                    if (Math.Abs(image1Bytes[pixelIndex + componentIndex] - image2Bytes[pixelIndex + componentIndex]) <= allowedDifference)
                     {
-                        imgDiff.SetPixel(i, j, color);
+                        continue;
                     }
-                    else
-                    {
-                        ++diffPixelCount;
-                        imgDiff.SetPixel(i, j, diffColor);
-                    }
+
+                    diffPixelCount++;
+
+                    diffImageBytes[pixelIndex] = diffColor.B;
+                    diffImageBytes[pixelIndex + 1] = diffColor.G;
+                    diffImageBytes[pixelIndex + 2] = diffColor.R;
+                    diffImageBytes[pixelIndex + 3] = diffColor.A;
                 }
             }
 
-            // Calculate percentage.
-            int totalPixelCount = img1.Width * img1.Height;
-            var imgDiffFactor = ((float)diffPixelCount / totalPixelCount);
-            imgEqualPercentage = imgDiffFactor * 100;
+            Marshal.Copy(diffImageBytes, 0, diffImageData.Scan0, diffImageBytes.Length);
 
-            return (imgDiffFactor == 1f);
+            image1.UnlockBits(image1Data);
+            image2.UnlockBits(image2Data);
+            diffImage.UnlockBits(diffImageData);
+
+            // Calculate percentage.
+            int totalPixelCount = image1.Width * image1.Height;
+            var imgDiffFactor = ((float)diffPixelCount / totalPixelCount);
+            imgEqualPercentage = 100 - imgDiffFactor * 100;
+
+            return (imgDiffFactor == 0f);
         }
     }
 }

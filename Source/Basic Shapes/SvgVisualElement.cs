@@ -16,6 +16,7 @@ namespace Svg
     {
         private bool? _requiresSmoothRendering;
         private Region _previousClip;
+        private Bitmap _previousMask;
 
         /// <summary>
         /// Gets the <see cref="GraphicsPath"/> for this element.
@@ -62,6 +63,16 @@ namespace Svg
         {
             get { return GetAttribute<Uri>("clip-path", false); }
             set { Attributes["clip-path"] = value; }
+        }
+
+        /// <summary>
+        /// Gets the associated <see cref="SvgMask"/> if one has been specified.
+        /// </summary>
+        [SvgAttribute("mask")]
+        public virtual Uri Mask
+        {
+            get { return GetAttribute<Uri>("mask", false); }
+            set { Attributes["mask"] = value; }
         }
 
         /// <summary>
@@ -190,7 +201,15 @@ namespace Svg
                 if (PushTransforms(renderer))
                 {
                     SetClip(renderer);
+
+                    var isMaskSet = SetMask(renderer);
                     renderMethod.Invoke(renderer);
+
+                    if (isMaskSet)
+                    {
+                        ResetMask(renderer);
+                    }
+
                     ResetClip(renderer);
                 }
             }
@@ -311,7 +330,7 @@ namespace Svg
                                     strokeWidth = Math.Max(strokeWidth, 1f);
 
                                     /* divide by stroke width - GDI uses stroke width as unit.*/
-                                    var dashPattern = strokeDashArray.Select(u => ((u.ToDeviceValue(renderer, UnitRenderingType.Other, this) <= 0f) ? 1f : 
+                                    var dashPattern = strokeDashArray.Select(u => ((u.ToDeviceValue(renderer, UnitRenderingType.Other, this) <= 0f) ? 1f :
                                         u.ToDeviceValue(renderer, UnitRenderingType.Other, this)) / strokeWidth).ToArray();
                                     var length = dashPattern.Length;
 
@@ -373,7 +392,7 @@ namespace Svg
 
                                         if (dashOffset != 0f)
                                         {
-                                            pen.DashOffset = ((dashOffset.ToDeviceValue(renderer, UnitRenderingType.Other, this) <= 0f) ? 1f : 
+                                            pen.DashOffset = ((dashOffset.ToDeviceValue(renderer, UnitRenderingType.Other, this) <= 0f) ? 1f :
                                                 dashOffset.ToDeviceValue(renderer, UnitRenderingType.Other, this)) / strokeWidth;
                                         }
                                     }
@@ -463,6 +482,32 @@ namespace Svg
                 renderer.SetClip(this._previousClip);
                 this._previousClip = null;
             }
+        }
+
+        protected internal virtual bool SetMask(ISvgRenderer renderer)
+        {
+            var maskPath = this.Mask.ReplaceWithNullIfNone();
+
+            if (maskPath != null)
+            {
+                this._previousMask = renderer.GetMask();
+
+                var element = this.OwnerDocument.GetElementById<SvgMask>(maskPath.ToString());
+                if (element != null)
+                {
+                    renderer.SetMask(element.RenderMask(renderer));
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        protected internal virtual void ResetMask(ISvgRenderer renderer)
+        {
+            renderer.DisposeMask();
+            renderer.SetMask(this._previousMask);
         }
 
         /// <summary>
