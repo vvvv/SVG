@@ -255,7 +255,7 @@ namespace Svg
                     }
                 }
 
-                if (string.Empty.Equals(elementName))
+                if (elementName?.Length == 0)
                     continue;
 
                 if (elementName is not null && items.TryGetValue(elementName, out var element))

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Svg
 {
@@ -9,16 +8,8 @@ namespace Svg
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Event)]
     public class SvgAttributeAttribute : Attribute
     {
-        public const string XLinkPrefix = "xlink";
-        public const string XLinkNamespace = "http://www.w3.org/1999/xlink";
-        public const string XmlPrefix = "xml";
-        public const string XmlNamespace = "http://www.w3.org/XML/1998/namespace";
-
-        public static readonly List<KeyValuePair<string, string>> Namespaces = new List<KeyValuePair<string, string>>()
-                                                                            {
-                                                                                new KeyValuePair<string, string>(XLinkPrefix, XLinkNamespace),
-                                                                                new KeyValuePair<string, string>(XmlPrefix, XmlNamespace)
-                                                                            };
+        public const string XLinkNamespace = SvgNamespaces.XLinkNamespace;
+        public const string XmlNamespace = SvgNamespaces.XmlNamespace;
 
         public override bool Equals(object obj)
         {
@@ -60,7 +51,7 @@ namespace Svg
         /// </summary>
         /// <param name="name">The name of the SVG attribute.</param>
         internal SvgAttributeAttribute(string name)
-            : this(name, SvgNamespace.UriString) { }
+            : this(name, SvgNamespaces.SvgNamespace) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SvgAttributeAttribute"/> class with the specified SVG attribute name and namespace.

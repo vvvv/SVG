@@ -109,7 +109,7 @@ namespace Svg
 
             //Trace.TraceInformation("Begin CreateElement: {0}", elementName);
 
-            if (elementNS == SvgNamespace.UriString || string.IsNullOrEmpty(elementNS))
+            if (elementNS == SvgNamespaces.SvgNamespace || string.IsNullOrEmpty(elementNS))
             {
                 if (elementName == "svg")
                 {
@@ -162,12 +162,24 @@ namespace Svg
 
             while (reader.MoveToNextAttribute())
             {
+                var prefix = reader.Prefix;
                 var localName = reader.LocalName;
                 if (reader.ReadAttributeValue())
                 {
-                    if (localName.Equals("xmlns"))
+                    if (prefix.Length == 0)
                     {
-                        continue;    // skip the xmlns attribute (already processed via reader.NamespaceURI in CreateElement<T>)
+                        if (localName.Equals("xmlns"))
+                        {
+                            element.Namespaces[string.Empty] = reader.Value;
+                            continue;
+                        }
+                        else if (localName.Equals("version"))
+                            continue;
+                    }
+                    else if (prefix.Equals("xmlns"))
+                    {
+                        element.Namespaces[localName] = reader.Value;
+                        continue;
                     }
                     if (localName.Equals("style") && !(element is NonSvgElement))
                     {
@@ -180,13 +192,14 @@ namespace Svg
                             }
                         }
                     }
-                    else if (IsStyleAttribute(localName))
+                    else if (prefix.Length == 0 && IsStyleAttribute(localName))
                     {
                         element.AddStyle(localName, reader.Value, SvgElement.StyleSpecificity_PresAttribute);
                     }
                     else
                     {
-                        SetPropertyValue(element, localName, reader.Value, document);
+                        var ns = prefix.Length == 0 ? string.Empty : reader.LookupNamespace(prefix);
+                        SetPropertyValue(element, ns, localName, reader.Value, document);
                     }
                 }
             }
@@ -268,7 +281,7 @@ namespace Svg
         private static readonly Dictionary<Type, Dictionary<string, PropertyDescriptorCollection>> _propertyDescriptors = new Dictionary<Type, Dictionary<string, PropertyDescriptorCollection>>();
         private static readonly object syncLock = new object();
 #endif
-        internal static bool SetPropertyValue(SvgElement element, string attributeName, string attributeValue, SvgDocument document, bool isStyle = false)
+        internal static bool SetPropertyValue(SvgElement element, string ns, string attributeName, string attributeValue, SvgDocument document, bool isStyle = false)
         {
 #if !USE_SOURCE_GENERATORS
             var elementType = element.GetType();
@@ -326,32 +339,11 @@ namespace Svg
             }
 #endif
             {
-                //check for namespace declaration in svg element
-                if (string.Equals(element.ElementName, "svg", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (string.Equals(attributeName, "xmlns", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(attributeName, "xlink", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(attributeName, "xmlns:xlink", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(attributeName, "version", StringComparison.OrdinalIgnoreCase))
-                    {
-                        //nothing to do
-                    }
-                    else
-                    {
-                        //attribute is not a svg attribute, store it in custom attributes
-                        element.CustomAttributes[attributeName] = attributeValue;
-                    }
-                }
-                else
-                {
-                    if (isStyle)
-                    {
-                        // custom styles shall remain as style
-                        return false;
-                    }
-                    //attribute is not a svg attribute, store it in custom attributes
-                    element.CustomAttributes[attributeName] = attributeValue;
-                }
+                if (isStyle)
+                    // custom styles shall remain as style
+                    return false;
+                // attribute is not a svg attribute, store it in custom attributes
+                element.CustomAttributes[ns.Length == 0 ? attributeName : $"{ns}:{attributeName}"] = attributeValue;
             }
             return true;
         }

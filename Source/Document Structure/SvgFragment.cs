@@ -16,7 +16,7 @@ namespace Svg
         /// <summary>
         /// Gets the SVG namespace string.
         /// </summary>
-        public static readonly Uri Namespace = new Uri(SvgNamespace.UriString);
+        public static readonly Uri Namespace = new Uri(SvgNamespaces.SvgNamespace);
 
         PointF ISvgBoundable.Location
         {
