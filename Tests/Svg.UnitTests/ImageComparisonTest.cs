@@ -28,6 +28,11 @@ namespace Svg.UnitTests
         [TestCaseSource(typeof(ImageTestDataSource), nameof(ImageTestDataSource.PassingTests))]
         public void CompareSvgImageWithReference(ImageTestDataSource.TestData testData)
         {
+            // W3C Test Suites use external references to local fonts
+            SvgDocument.ResolveExternalXmlEntites = ExternalType.Local;
+            SvgDocument.ResolveExternalElements = ExternalType.Local;
+            SvgDocument.ResolveExternalImages = ExternalType.Local;
+            
             string basePath = testData.BasePath;
             string baseName = testData.BaseName;
             bool testSaveLoad = !baseName.StartsWith("#");
@@ -44,6 +49,11 @@ namespace Svg.UnitTests
         [TestCaseSource(typeof(ImageTestDataSource), "PassingTests")]
         public void CompareSvgImageWithReference(ImageTestDataSource.TestData testData)
         {
+            // W3C Test Suites use external references to local fonts
+            SvgDocument.ResolveExternalXmlEntites = ExternalType.Local;
+            SvgDocument.ResolveExternalElements = ExternalType.Local;
+            SvgDocument.ResolveExternalImages = ExternalType.Local;
+
             var basePath = testData.BasePath;
             while (!basePath.ToLower().EndsWith("svg"))
             {
@@ -62,8 +72,10 @@ namespace Svg.UnitTests
             CompareSvgImageWithReferenceImpl(baseName, svgPath, pngPath, testSaveLoad);
         }
 #endif
+        
+        
 
-        private void CompareSvgImageWithReferenceImpl(string baseName,
+        public static void CompareSvgImageWithReferenceImpl(string baseName,
             string svgPath, string pngPath, bool testSaveLoad)
         {
             var svgDoc = LoadSvgDocument(svgPath);
@@ -91,7 +103,6 @@ namespace Svg.UnitTests
                     svgDoc.Write(memStream);
                     memStream.Position = 0;
                     var baseUri = svgDoc.BaseUri;
-                    SvgDocument.ResolveExternalResources = true;
                     svgDoc = SvgDocument.Open<SvgDocument>(memStream);
                     svgDoc.BaseUri = baseUri;
                     using (var svgImage = LoadSvgImage(svgDoc, useFixedSize))

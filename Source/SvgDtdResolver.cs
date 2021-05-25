@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -9,10 +10,10 @@ namespace Svg
     internal class SvgDtdResolver : XmlUrlResolver
     {
         /// <summary>
-        /// Defaults to `false` to prevent XXE.  Set to `true` to resolve external resources.
+        /// Defaults to <see cref="ExternalType.None"/> to prevent XXE.  Set to <see cref="ExternalType.Local"/> and/or <see cref="ExternalType"/> to resolve external resources.
         /// </summary>
         /// <see ref="https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing"/>
-        public bool ResolveExternalResources { get; set; }
+        public ExternalType ResolveExternalXmlEntities { get; set; }
 
         /// <summary>
         /// Maps a URI to an object containing the actual resource.
@@ -36,11 +37,12 @@ namespace Svg
                 return Assembly.GetExecutingAssembly().GetManifestResourceStream("Svg.Resources.svg11.dtd");
             }
 
-            if (ResolveExternalResources)
+            if (ResolveExternalXmlEntities.AllowsResolving(absoluteUri))
             {
                 return base.GetEntity(absoluteUri, role, ofObjectToReturn);
             }
 
+            Trace.TraceWarning("Trying to resolve entity from '{0}', but resolving external entities of that type is disabled.", absoluteUri);
             return new MemoryStream();
         }
 

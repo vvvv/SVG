@@ -37,10 +37,20 @@ namespace Svg
         public static bool DisableDtdProcessing { get; set; }
 
         /// <summary>
-        /// Defaults to `false` to prevent XXE.  Set to `true` to resolve external resources.
+        /// Which types of XML external entities are allowed to be resolved. Defaults to <see cref="ExternalType.None"/> to prevent XXE.
         /// </summary>
         /// <see ref="https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing"/>
-        public static bool ResolveExternalResources { get; set; }
+        public static ExternalType ResolveExternalXmlEntites { get; set; } = ExternalType.None;
+
+        /// <summary>
+        /// Which types of external images are allowed to be resolved. Defaults to <see cref="ExternalType.Local"/> and <see cref="ExternalType.Remote"/>.
+        /// </summary>
+        public static ExternalType ResolveExternalImages { get; set; } = ExternalType.Local | ExternalType.Remote;
+
+        /// <summary>
+        /// Which types of external elements, for example text definitions, are allowed to be resolved. Defaults to <see cref="ExternalType.Local"/> and <see cref="ExternalType.Remote"/>.
+        /// </summary>
+        public static ExternalType ResolveExternalElements { get; set; } = ExternalType.Local | ExternalType.Remote;
 
         private static int? pointsPerInch;
 
@@ -364,7 +374,7 @@ namespace Svg
                 {
                     XmlResolver = new SvgDtdResolver
                     {
-                        ResolveExternalResources = ResolveExternalResources
+                        ResolveExternalXmlEntities = ResolveExternalXmlEntites
                     },
                     WhitespaceHandling = WhitespaceHandling.Significant,
                     DtdProcessing = SvgDocument.DisableDtdProcessing ? DtdProcessing.Ignore : DtdProcessing.Parse,
@@ -391,7 +401,7 @@ namespace Svg
             {
                 XmlResolver = new SvgDtdResolver
                 {
-                    ResolveExternalResources = ResolveExternalResources
+                    ResolveExternalXmlEntities = ResolveExternalXmlEntites
                 },
                 WhitespaceHandling = WhitespaceHandling.Significant,
                 DtdProcessing = SvgDocument.DisableDtdProcessing ? DtdProcessing.Ignore : DtdProcessing.Parse,
