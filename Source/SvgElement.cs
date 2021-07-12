@@ -10,6 +10,20 @@ using Svg.Transforms;
 
 namespace Svg
 {
+    // Define as true if SvgElementBenchmarks is run.
+#if true
+    public class EmptyClass
+    {
+    }
+
+    public partial class SvgElementEmpty : SvgElement
+    {
+        public override SvgElement DeepCopy()
+        {
+            throw new NotImplementedException();
+        }
+    }
+#endif
     /// <summary>
     /// The base class of which all SVG elements are derived from.
     /// </summary>
@@ -44,9 +58,8 @@ namespace Svg
         private Matrix _graphicsTransform;
         private Region _graphicsClip;
         private SvgCustomAttributeCollection _customAttributes;
-        private List<ISvgNode> _nodes = new List<ISvgNode>();
-
-        private Dictionary<string, SortedDictionary<int, string>> _styles = new Dictionary<string, SortedDictionary<int, string>>();
+        private List<ISvgNode> _nodes;
+        private Dictionary<string, SortedDictionary<int, string>> _styles;
 
         /// <summary>
         /// Add style.
@@ -56,10 +69,13 @@ namespace Svg
         /// <param name="specificity">The specificity value.</param>
         public void AddStyle(string name, string value, int specificity)
         {
-            SortedDictionary<int, string> rules;
-            if (!_styles.TryGetValue(name, out rules))
+            if (_styles == null || !_styles.TryGetValue(name, out var rules))
             {
                 rules = new SortedDictionary<int, string>();
+                if (_styles == null)
+                {
+                    _styles = new Dictionary<string, SortedDictionary<int, string>>();
+                }
                 _styles[name] = rules;
             }
             while (rules.ContainsKey(specificity)) ++specificity;
@@ -73,45 +89,61 @@ namespace Svg
         public void FlushStyles(bool children = false)
         {
             FlushStyles();
-            if (children)
+            if (children && HasChildren())
+            {
                 foreach (var child in Children)
+                {
                     child.FlushStyles(children);
+                }
+            }
         }
 
         private void FlushStyles()
         {
-            if (_styles.Any())
+            if (_styles != null && _styles.Any())
             {
-                var styles = new Dictionary<string, SortedDictionary<int, string>>();
+                Dictionary<string, SortedDictionary<int, string>> styles = null;
                 foreach (var s in _styles)
+                {
                     if (!SvgElementFactory.SetPropertyValue(this, s.Key, s.Value.Last().Value, OwnerDocument, true))
+                    {
+                        if (styles == null)
+                        {
+                            styles = new Dictionary<string, SortedDictionary<int, string>>();
+                        }
                         styles.Add(s.Key, s.Value);
+                    }
+                }
                 _styles = styles;
             }
         }
 
         public bool ContainsAttribute(string name)
         {
-            SortedDictionary<int, string> rules;
-            return (this.Attributes.ContainsKey(name) || this.CustomAttributes.ContainsKey(name) ||
-                (_styles.TryGetValue(name, out rules)) && (rules.ContainsKey(StyleSpecificity_InlineStyle) || rules.ContainsKey(StyleSpecificity_PresAttribute)));
+            return ((this._attributes != null && this._attributes.ContainsKey(name))
+                    || (this._customAttributes != null && this._customAttributes.ContainsKey(name))
+                    || (_styles != null && _styles.TryGetValue(name, out var rules))
+                    && (rules.ContainsKey(StyleSpecificity_InlineStyle) || rules.ContainsKey(StyleSpecificity_PresAttribute)));
         }
         public bool TryGetAttribute(string name, out string value)
         {
             object objValue;
-            if (this.Attributes.TryGetValue(name, out objValue))
+            if (this._attributes != null && this._attributes.TryGetValue(name, out objValue))
             {
                 value = objValue.ToString();
                 return true;
             }
-            if (this.CustomAttributes.TryGetValue(name, out value)) return true;
-            SortedDictionary<int, string> rules;
-            if (_styles.TryGetValue(name, out rules))
+            if (this._customAttributes != null && this._customAttributes.TryGetValue(name, out value))
+            {
+                return true;
+            }
+            if (_styles != null && _styles.TryGetValue(name, out var rules))
             {
                 // Get staged styles that are
                 if (rules.TryGetValue(StyleSpecificity_InlineStyle, out value)) return true;
                 if (rules.TryGetValue(StyleSpecificity_PresAttribute, out value)) return true;
             }
+            value = null;
             return false;
         }
 
@@ -198,7 +230,14 @@ namespace Svg
         /// </summary>
         protected virtual EventHandlerList Events
         {
-            get { return this._eventHandlers; }
+            get
+            {
+                if (this._eventHandlers == null)
+                {
+                    this._eventHandlers = new EventHandlerList();
+                }
+                return this._eventHandlers;
+            }
         }
 
         /// <summary>
@@ -215,12 +254,26 @@ namespace Svg
         /// </summary>
         public virtual SvgElementCollection Children
         {
-            get { return this._children; }
+            get
+            {
+                if (this._children == null)
+                {
+                    this._children = new SvgElementCollection(this);
+                }
+                return this._children;
+            }
         }
 
         public IList<ISvgNode> Nodes
         {
-            get { return this._nodes; }
+            get
+            {
+                if (this._nodes == null)
+                {
+                    this._nodes = new List<ISvgNode>();
+                }
+                return this._nodes;
+            }
         }
 
         public IEnumerable<SvgElement> Descendants()
@@ -237,7 +290,31 @@ namespace Svg
         /// </summary>
         public virtual bool HasChildren()
         {
-            return (this.Children.Count > 0);
+            return (this._children != null && this._children.Count > 0);
+        }
+
+        /// <summary>
+        /// Gets a value to determine whether the element has nodes.
+        /// </summary>
+        public bool HasNodes()
+        {
+            return (this._nodes != null && this._nodes.Count > 0);
+        }
+
+        /// <summary>
+        /// Gets a value to determine whether the element has attributes.
+        /// </summary>
+        public bool HasAttributes()
+        {
+            return (this._attributes != null && this._attributes.Count > 0);
+        }
+
+        /// <summary>
+        /// Gets a value to determine whether the element has custom attributes.
+        /// </summary>
+        public bool HasCustomAttributes()
+        {
+            return (this._customAttributes != null && this._customAttributes.Count > 0);
         }
 
         /// <summary>
@@ -306,6 +383,8 @@ namespace Svg
                 if (this._attributes == null)
                 {
                     this._attributes = new SvgAttributeCollection(this);
+                    //subscribe to attribute events
+                    this._attributes.AttributeChanged += Attributes_AttributeChanged;
                 }
 
                 return this._attributes;
@@ -317,9 +396,18 @@ namespace Svg
         protected internal TAttributeType GetAttribute<TAttributeType>(string attributeName, bool inherited, TAttributeType defaultValue = default(TAttributeType))
         {
             if (Writing)
-                return Attributes.GetAttribute(attributeName, defaultValue);
+            {
+                if (_attributes == null || _attributes.Count == 0)
+                {
+                    return defaultValue;
+                }
+                return _attributes.GetAttribute(attributeName, defaultValue);
+            }
             else
+            {
+                // TODO: Get inherited attributes without allocating Attributes so we can use _attributes.
                 return Attributes.GetInheritedAttribute(attributeName, inherited, defaultValue);
+            }
         }
 
         /// <summary>
@@ -327,7 +415,16 @@ namespace Svg
         /// </summary>
         public SvgCustomAttributeCollection CustomAttributes
         {
-            get { return this._customAttributes; }
+            get
+            {
+                if (this._customAttributes == null)
+                {
+                    this._customAttributes = new SvgCustomAttributeCollection(this);
+                    //subscribe to attribute events
+                    this._customAttributes.AttributeChanged += Attributes_AttributeChanged;
+                }
+                return this._customAttributes;
+            }
         }
 
         /// <summary>
@@ -506,9 +603,12 @@ namespace Svg
         {
             this.AddElement(child, index);
             SvgElement sibling = null;
-            if (index < (Children.Count - 1))
+            if (this.HasChildren())
             {
-                sibling = Children[index + 1];
+                if (index < (Children.Count - 1))
+                {
+                    sibling = Children[index + 1];
+                }
             }
             var handler = ChildAdded;
             if (handler != null)
@@ -540,14 +640,7 @@ namespace Svg
         /// </summary>
         public SvgElement()
         {
-            this._children = new SvgElementCollection(this);
-            this._eventHandlers = new EventHandlerList();
             this._elementName = string.Empty;
-            this._customAttributes = new SvgCustomAttributeCollection(this);
-
-            //subscribe to attribute events
-            Attributes.AttributeChanged += Attributes_AttributeChanged;
-            CustomAttributes.AttributeChanged += Attributes_AttributeChanged;
 #if !USE_SOURCE_GENERATORS
             //find svg attribute descriptions
             _svgPropertyAttributes = from PropertyDescriptor a in TypeDescriptor.GetProperties(this)
@@ -643,18 +736,21 @@ namespace Svg
 
             //add the custom attributes
             var additionalStyleValue = string.Empty;
-            foreach (var item in this._customAttributes)
+            if (this._customAttributes != null)
             {
-                if (item.Key.Equals("style") && styles.Any())
+                foreach (var item in this._customAttributes)
                 {
-                    additionalStyleValue = item.Value;
-                    continue;
+                    if (item.Key.Equals("style") && styles != null && styles.Any())
+                    {
+                        additionalStyleValue = item.Value;
+                        continue;
+                    }
+                    WriteAttributeString(writer, item.Key, null, item.Value);
                 }
-                WriteAttributeString(writer, item.Key, null, item.Value);
             }
 
             //write the style property
-            if (styles.Any())
+            if (styles != null && styles.Any())
             {
                 var styleValues = styles.Select(s => s.Key + ":" + s.Value)
                     .Concat(Enumerable.Repeat(additionalStyleValue, 1));
@@ -664,7 +760,7 @@ namespace Svg
 
         private Dictionary<string, string> WritePropertyAttributes(XmlWriter writer)
         {
-            var styles = _styles.ToDictionary(_styles => _styles.Key, _styles => _styles.Value.Last().Value);
+            var styles = _styles?.ToDictionary(x => x.Key, x => x.Value.Last().Value);
 
 #if USE_SOURCE_GENERATORS
             var opacityAttributes = new List<ISvgPropertyDescriptor>();
@@ -738,6 +834,10 @@ namespace Svg
                                 {
                                     if (writeStyle)
                                     {
+                                        if (styles == null)
+                                        {
+                                            styles = new Dictionary<string, string>();
+                                        }
                                         styles[property.AttributeName] = value;
                                     }
                                     else
@@ -750,6 +850,10 @@ namespace Svg
                             {
                                 if (writeStyle)
                                 {
+                                    if (styles == null)
+                                    {
+                                        styles = new Dictionary<string, string>();
+                                    }
                                     styles[property.AttributeName] = value;
                                 }
                                 else
@@ -858,6 +962,10 @@ namespace Svg
                                 {
                                     if (writeStyle)
                                     {
+                                        if (styles == null)
+                                        {
+                                            styles = new Dictionary<string, string>();
+                                        }
                                         styles[attr.Attribute.Name] = value;
                                     }
                                     else
@@ -870,6 +978,10 @@ namespace Svg
                             {
                                 if (writeStyle)
                                 {
+                                    if (styles == null)
+                                    {
+                                        styles = new Dictionary<string, string>();
+                                    }
                                     styles[attr.Attribute.Name] = value;
                                 }
                                 else
@@ -981,7 +1093,7 @@ namespace Svg
 
         protected virtual void WriteChildren(XmlWriter writer)
         {
-            if (this.Nodes.Any())
+            if (this.HasNodes())
             {
                 SvgContentNode content;
                 foreach (var node in this.Nodes)
@@ -1004,9 +1116,12 @@ namespace Svg
                     writer.WriteString(this.Content);
 
                 //write all children
-                foreach (SvgElement child in this.Children)
+                if (this.HasChildren())
                 {
-                    child.Write(writer);
+                    foreach (SvgElement child in this.Children)
+                    {
+                        child.Write(writer);
+                    }
                 }
             }
         }
@@ -1034,8 +1149,13 @@ namespace Svg
         /// <param name="renderer">The <see cref="ISvgRenderer"/> to render the child <see cref="SvgElement"/>s to.</param>
         protected virtual void RenderChildren(ISvgRenderer renderer)
         {
-            foreach (var element in Children)
-                element.Render(renderer);
+            if (this.HasChildren())
+            {
+                foreach (var element in Children)
+                {
+                    element.Render(renderer);
+                }
+            }
         }
 
         /// <summary>
@@ -1054,6 +1174,11 @@ namespace Svg
         /// <param name="path"></param>
         protected void AddPaths(SvgElement elem, GraphicsPath path)
         {
+            if (!this.HasChildren())
+            {
+                return;
+            }
+
             foreach (var child in elem.Children)
             {
                 // Skip to avoid double calculate Symbol element
@@ -1093,6 +1218,11 @@ namespace Svg
         {
             var ret = new GraphicsPath();
 
+            if (!this.HasChildren())
+            {
+                return ret;
+            }
+
             foreach (var child in elem.Children)
             {
                 if (child is SvgVisualElement)
@@ -1115,7 +1245,7 @@ namespace Svg
                         childPath = childPath != null ? (GraphicsPath)childPath.Clone() : new GraphicsPath();
 
                         // Non-group element can have child element which we have to consider. i.e tspan in text element
-                        if (child.Children.Count > 0)
+                        if (child.HasChildren())
                         {
                             var descendantPath = GetPaths(child, renderer);
                             if (descendantPath.PointCount > 0)
@@ -1172,8 +1302,13 @@ namespace Svg
                 newObj.Attributes.Add(attribute.Key, value);
             }
 
-            foreach (var child in Children)
-                newObj.Children.Add(child.DeepCopy());
+            if (HasChildren())
+            {
+                foreach (var child in Children)
+                {
+                    newObj.Children.Add(child.DeepCopy());
+                }
+            }
 
 #if USE_SOURCE_GENERATORS
             foreach (var property in this.GetProperties().Where(x => x.DescriptorType == DescriptorType.Event))
@@ -1228,11 +1363,21 @@ namespace Svg
                 }
             }
 #endif
-            foreach (var attribute in CustomAttributes)
-                newObj.CustomAttributes.Add(attribute.Key, attribute.Value);
+            if (this._customAttributes != null)
+            {
+                foreach (var attribute in this._customAttributes)
+                {
+                    newObj.CustomAttributes.Add(attribute.Key, attribute.Value);
+                }
+            }
 
-            foreach (var node in Nodes)
-                newObj.Nodes.Add(node.DeepCopy());
+            if (this._nodes != null)
+            {
+                foreach (var node in this._nodes)
+                {
+                    newObj.Nodes.Add(node.DeepCopy());
+                }
+            }
 
             return newObj;
         }

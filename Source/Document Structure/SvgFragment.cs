@@ -219,28 +219,31 @@ namespace Svg
             get
             {
                 var bounds = new RectangleF();
-                foreach (var child in this.Children)
+                if (this.HasChildren())
                 {
-                    RectangleF childBounds = new RectangleF();
-                    if (child is SvgFragment)
+                    foreach (var child in this.Children)
                     {
-                        childBounds = ((SvgFragment)child).Bounds;
-                        childBounds.Offset(((SvgFragment)child).X, ((SvgFragment)child).Y);
-                    }
-                    else if (child is SvgVisualElement)
-                    {
-                        childBounds = ((SvgVisualElement)child).Bounds;
-                    }
-
-                    if (!childBounds.IsEmpty)
-                    {
-                        if (bounds.IsEmpty)
+                        RectangleF childBounds = new RectangleF();
+                        if (child is SvgFragment)
                         {
-                            bounds = childBounds;
+                            childBounds = ((SvgFragment)child).Bounds;
+                            childBounds.Offset(((SvgFragment)child).X, ((SvgFragment)child).Y);
                         }
-                        else
+                        else if (child is SvgVisualElement)
                         {
-                            bounds = RectangleF.Union(bounds, childBounds);
+                            childBounds = ((SvgVisualElement)child).Bounds;
+                        }
+
+                        if (!childBounds.IsEmpty)
+                        {
+                            if (bounds.IsEmpty)
+                            {
+                                bounds = childBounds;
+                            }
+                            else
+                            {
+                                bounds = RectangleF.Union(bounds, childBounds);
+                            }
                         }
                     }
                 }

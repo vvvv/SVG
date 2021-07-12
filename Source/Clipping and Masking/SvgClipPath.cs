@@ -33,8 +33,11 @@ namespace Svg
             {
                 _path = new GraphicsPath();
 
-                foreach (var element in Children)
-                    CombinePaths(_path, element, renderer);
+                if (HasChildren())
+                {
+                    foreach (var element in Children)
+                        CombinePaths(_path, element, renderer);
+                }
 
                 IsPathDirty = false;
             }
@@ -80,8 +83,11 @@ namespace Svg
                 }
             }
 
-            foreach (var child in element.Children)
-                CombinePaths(path, child, renderer);
+            if (HasChildren())
+            {
+                foreach (var child in element.Children)
+                    CombinePaths(path, child, renderer);
+            }
         }
 
         /// <summary>

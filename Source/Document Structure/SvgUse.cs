@@ -33,7 +33,7 @@ namespace Svg
                 return useElement.ReferencedElementReferencesUri(elementUris);
             }
             var groupElement = element as SvgGroup;
-            if (groupElement != null)
+            if (groupElement != null && groupElement.HasChildren())
             {
                 foreach (var child in groupElement.Children)
                 {

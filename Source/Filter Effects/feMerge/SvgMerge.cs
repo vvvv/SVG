@@ -8,6 +8,10 @@ namespace Svg.FilterEffects
     {
         public override void Process(ImageBuffer buffer)
         {
+            if (!this.HasChildren())
+            {
+                return;
+            }
             var children = this.Children.OfType<SvgMergeNode>().ToList();
             var inputImage = buffer[children.First().Input];
             var result = new Bitmap(inputImage.Width, inputImage.Height);

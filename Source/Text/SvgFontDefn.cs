@@ -31,8 +31,11 @@ namespace Svg
             _font = font;
             _size = size;
             _ppi = ppi;
-            var face = _font.Children.OfType<SvgFontFace>().First();
-            _emScale = _size / face.UnitsPerEm;
+            if (_font.HasChildren())
+            {
+                var face = _font.Children.OfType<SvgFontFace>().First();
+                _emScale = _size / face.UnitsPerEm;
+            }
         }
 
         public float Ascent(ISvgRenderer renderer)

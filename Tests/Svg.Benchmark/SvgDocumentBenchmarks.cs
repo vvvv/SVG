@@ -1,6 +1,5 @@
 using BenchmarkDotNet.Attributes;
 using System.IO;
-using Svg;
 
 namespace Svg.Benchmark
 {

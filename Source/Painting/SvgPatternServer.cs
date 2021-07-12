@@ -158,7 +158,7 @@ namespace Svg
                 curr = SvgDeferredPaintServer.TryGet<SvgPatternServer>(curr.InheritGradient, renderingElement);
             } while (curr != null);
 
-            var firstChildren = chain.Where(p => p.Children.Count > 0).FirstOrDefault();
+            var firstChildren = chain.Where(p => p.HasChildren()).FirstOrDefault();
             if (firstChildren == null)
                 return null;
             var firstX = chain.Where(p => p.X != SvgUnit.None).FirstOrDefault();
@@ -225,8 +225,11 @@ namespace Svg
                         tileRenderer.ScaleTransform(bounds.Width, bounds.Height);
                     }
 
-                    foreach (var child in firstChildren.Children)
-                        child.RenderElement(tileRenderer);
+                    if (firstChildren.HasChildren())
+                    {
+                        foreach (var child in firstChildren.Children)
+                            child.RenderElement(tileRenderer);
+                    }
                 }
 
                 using (var transform = EffectivePatternTransform)

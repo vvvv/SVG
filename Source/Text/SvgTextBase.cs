@@ -35,8 +35,15 @@ namespace Svg
             get { return Content; }
             set
             {
-                Nodes.Clear();
-                Children.Clear();
+                if (HasNodes())
+                {
+                    Nodes.Clear();
+                }
+
+                if (HasChildren())
+                {
+                    Children.Clear();
+                }
                 if (value != null)
                 {
                     Nodes.Add(new SvgContentNode { Content = value });
@@ -260,13 +267,16 @@ namespace Svg
             get
             {
                 var path = this.Path(null);
-                foreach (var elem in this.Children.OfType<SvgVisualElement>())
+                if (this.HasChildren())
                 {
-                    //When empty Text span, don't add path
-                    var span = elem as SvgTextSpan;
-                    if (span != null && span.Text == null)
-                        continue;
-                    path.AddPath(elem.Path(null), false);
+                    foreach (var elem in this.Children.OfType<SvgVisualElement>())
+                    {
+                        //When empty Text span, don't add path
+                        var span = elem as SvgTextSpan;
+                        if (span != null && span.Text == null)
+                            continue;
+                        path.AddPath(elem.Path(null), false);
+                    }
                 }
                 if (Transforms == null || Transforms.Count == 0)
                     return path.GetBounds();
@@ -288,7 +298,11 @@ namespace Svg
 
         internal virtual IEnumerable<ISvgNode> GetContentNodes()
         {
-            return (this.Nodes == null || this.Nodes.Count < 1 ? this.Children.OfType<ISvgNode>().Where(o => !(o is ISvgDescriptiveElement)) : this.Nodes);
+            return this.HasNodes() ?
+                this.Nodes
+                : this.HasChildren() ?
+                    this.Children.OfType<ISvgNode>().Where(o => !(o is ISvgDescriptiveElement))
+                    : Enumerable.Empty<ISvgNode>();
         }
         protected virtual GraphicsPath GetBaselinePath(ISvgRenderer renderer)
         {
@@ -997,7 +1011,7 @@ namespace Svg
         /// <summary>Empty text elements are not legal - only write this element if it has children.</summary>
         public override bool ShouldWriteElement()
         {
-            return (this.HasChildren() || this.Nodes.Count > 0);
+            return this.HasChildren() || this.HasNodes();
         }
     }
 }

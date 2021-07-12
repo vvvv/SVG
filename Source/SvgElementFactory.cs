@@ -113,7 +113,10 @@ namespace Svg
             {
                 if (elementName == "svg")
                 {
-                    createdElement = (fragmentIsDocument) ? new T() : new SvgFragment();
+                    createdElement = fragmentIsDocument
+                        ? typeof(T) == typeof(SvgDocument) ? new SvgDocument() : new T()
+                        : new SvgFragment();
+                    // createdElement = (fragmentIsDocument) ? new T() : new SvgFragment();
                 }
                 else
                 {

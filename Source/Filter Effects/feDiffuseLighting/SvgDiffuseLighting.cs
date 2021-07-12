@@ -38,10 +38,13 @@ namespace Svg.FilterEffects
         {
             get
             {
-                foreach (var child in this.Children)
+                if (this.HasChildren())
                 {
-                    if (child is SvgDistantLight || child is SvgPointLight || child is SvgSpotLight)
-                        return child;
+                    foreach (var child in this.Children)
+                    {
+                        if (child is SvgDistantLight || child is SvgPointLight || child is SvgSpotLight)
+                            return child;
+                    }
                 }
                 return null;
             }

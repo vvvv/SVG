@@ -27,22 +27,25 @@ namespace Svg
             get
             {
                 var r = new RectangleF();
-                foreach (var c in this.Children)
+                if (this.HasChildren())
                 {
-                    if (c is SvgVisualElement)
+                    foreach (var c in this.Children)
                     {
-                        // First it should check if rectangle is empty or it will return the wrong Bounds.
-                        // This is because when the Rectangle is Empty, the Union method adds as if the first values where X=0, Y=0
-                        if (r.IsEmpty)
+                        if (c is SvgVisualElement)
                         {
-                            r = ((SvgVisualElement)c).Bounds;
-                        }
-                        else
-                        {
-                            var childBounds = ((SvgVisualElement)c).Bounds;
-                            if (!childBounds.IsEmpty)
+                            // First it should check if rectangle is empty or it will return the wrong Bounds.
+                            // This is because when the Rectangle is Empty, the Union method adds as if the first values where X=0, Y=0
+                            if (r.IsEmpty)
                             {
-                                r = RectangleF.Union(r, childBounds);
+                                r = ((SvgVisualElement)c).Bounds;
+                            }
+                            else
+                            {
+                                var childBounds = ((SvgVisualElement)c).Bounds;
+                                if (!childBounds.IsEmpty)
+                                {
+                                    r = RectangleF.Union(r, childBounds);
+                                }
                             }
                         }
                     }

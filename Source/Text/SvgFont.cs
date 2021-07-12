@@ -29,7 +29,7 @@ namespace Svg
         [SvgAttribute("vert-adv-y")]
         public float VertAdvY
         {
-            get { return GetAttribute("vert-adv-y", true, Children.OfType<SvgFontFace>().First().UnitsPerEm); }
+            get { return GetAttribute("vert-adv-y", true, HasChildren() ? Children.OfType<SvgFontFace>().First().UnitsPerEm : 0f); }
             set { Attributes["vert-adv-y"] = value; }
         }
 
@@ -45,7 +45,7 @@ namespace Svg
         {
             get
             {
-                var defaultValue = Children.OfType<SvgFontFace>().First().Attributes["ascent"] as float? ?? 0f;
+                var defaultValue = this.HasChildren() ? Children.OfType<SvgFontFace>().First().Attributes["ascent"] as float? ?? 0f : 0f;
                 return GetAttribute("vert-origin-y", true, defaultValue);
             }
             set { Attributes["vert-origin-y"] = value; }

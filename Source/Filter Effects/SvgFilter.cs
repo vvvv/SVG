@@ -115,8 +115,11 @@ namespace Svg.FilterEffects
                 var inflate = 0.5f;
                 using (var buffer = new ImageBuffer(bounds, inflate, renderer, renderMethod) { Transform = transform })
                 {
-                    foreach (var primitive in Children.OfType<SvgFilterPrimitive>())
-                        primitive.Process(buffer);
+                    if (this.HasChildren())
+                    {
+                        foreach (var primitive in Children.OfType<SvgFilterPrimitive>())
+                            primitive.Process(buffer);
+                    }
 
                     // Render the final filtered image
                     var bufferImg = buffer.Buffer;

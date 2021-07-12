@@ -461,13 +461,16 @@ namespace Svg
                             // Pop the element out of the stack
                             element = elementStack.Pop();
 
-                            if (element.Nodes.OfType<SvgContentNode>().Any())
+                            if (element.HasNodes())
                             {
-                                element.Content = (from e in element.Nodes select e.Content).Aggregate((p, c) => p + c);
-                            }
-                            else
-                            {
-                                element.Nodes.Clear(); // No sense wasting the space where it isn't needed
+                                if (element.Nodes.OfType<SvgContentNode>().Any())
+                                {
+                                    element.Content = (from e in element.Nodes select e.Content).Aggregate((p, c) => p + c);
+                                }
+                                else
+                                {
+                                    element.Nodes.Clear(); // No sense wasting the space where it isn't needed
+                                }
                             }
 
                             var unknown = element as SvgUnknownElement;

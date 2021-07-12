@@ -104,7 +104,7 @@ namespace Svg
                 {
                     this._owner.OwnerDocument.IdManager.AddAndForceUniqueID(item, sibling, autoForceUniqueID, logElementOldIDNewID);
 
-                    if (!(item is SvgDocument)) //don't add subtree of a document to parent document
+                    if (!(item is SvgDocument) && item.HasChildren()) //don't add subtree of a document to parent document
                     {
                         foreach (var child in item.Children)
                         {
@@ -176,7 +176,7 @@ namespace Svg
         /// <returns></returns>
         public IEnumerable<T> FindSvgElementsOf<T>() where T : SvgElement
         {
-            return _elements.Where(x => x is T).Select(x => x as T).Concat(_elements.SelectMany(x => x.Children.FindSvgElementsOf<T>()));
+            return _elements.Where(x => x is T).Select(x => x as T).Concat(_elements.Where(e => e.HasChildren()).SelectMany(x => x.Children.FindSvgElementsOf<T>()));
         }
 
         /// <summary>
@@ -186,7 +186,7 @@ namespace Svg
         /// <returns></returns>
         public T FindSvgElementOf<T>() where T : SvgElement
         {
-            return _elements.OfType<T>().FirstOrDefault() ?? _elements.Select(x => x.Children.FindSvgElementOf<T>()).FirstOrDefault<T>(x => x != null);
+            return _elements.OfType<T>().FirstOrDefault() ?? _elements.Where(e => e.HasChildren()).Select(x => x.Children.FindSvgElementOf<T>()).FirstOrDefault<T>(x => x != null);
         }
 
         public T GetSvgElementOf<T>() where T : SvgElement

@@ -107,12 +107,12 @@ namespace Svg.Css
 
         public Selector<SvgElement> FirstChild()
         {
-            return nodes => nodes.Where(n => n.Parent == null || n.Parent.Children.First() == n);
+            return nodes => nodes.Where(n => n.Parent == null || (n.Parent.HasChildren() && n.Parent.Children.First() == n));
         }
 
         public Selector<SvgElement> LastChild()
         {
-            return nodes => nodes.Where(n => n.Parent == null || n.Parent.Children.Last() == n);
+            return nodes => nodes.Where(n => n.Parent == null || (n.Parent.HasChildren() && n.Parent.Children.Last() == n));
         }
 
         private IEnumerable<T> GetByIds<T>(IList<T> items, IEnumerable<int> indices)
@@ -125,22 +125,24 @@ namespace Svg.Css
 
         public Selector<SvgElement> NthChild(int a, int b)
         {
-            return nodes => nodes.Where(n => n.Parent != null && GetByIds(n.Parent.Children, (from i in Enumerable.Range(0, n.Parent.Children.Count / a) select a * i + b)).Contains(n));
+            return nodes =>
+                nodes.Where(
+                    n => n.Parent != null && n.Parent.HasChildren() && GetByIds(n.Parent.Children, (from i in Enumerable.Range(0, n.Parent.Children.Count / a) select a * i + b)).Contains(n));
         }
 
         public Selector<SvgElement> OnlyChild()
         {
-            return nodes => nodes.Where(n => n.Parent == null || n.Parent.Children.Count == 1);
+            return nodes => nodes.Where(n => n.Parent == null || (n.Parent.HasChildren() && n.Parent.Children.Count == 1));
         }
 
         public Selector<SvgElement> Empty()
         {
-            return nodes => nodes.Where(n => n.Children.Count == 0);
+            return nodes => nodes.Where(n => !n.HasChildren());
         }
 
         public Selector<SvgElement> Child()
         {
-            return nodes => nodes.SelectMany(n => n.Children);
+            return nodes => nodes.Where(n => n.HasChildren()).SelectMany(n => n.Children);
         }
 
         public Selector<SvgElement> Descendant()
@@ -150,6 +152,10 @@ namespace Svg.Css
 
         private IEnumerable<SvgElement> Descendants(SvgElement elem)
         {
+            if (!elem.HasChildren())
+            {
+                yield break;
+            }
             foreach (var child in elem.Children)
             {
                 yield return child;
@@ -172,7 +178,9 @@ namespace Svg.Css
 
         private IEnumerable<SvgElement> ElementsAfterSelf(SvgElement self)
         {
-            return (self.Parent == null ? Enumerable.Empty<SvgElement>() : self.Parent.Children.Skip(self.Parent.Children.IndexOf(self) + 1));
+            return (self.Parent == null || !self.Parent.HasChildren() ?
+                Enumerable.Empty<SvgElement>()
+                : self.Parent.Children.Skip(self.Parent.Children.IndexOf(self) + 1));
         }
 
         public Selector<SvgElement> NthLastChild(int a, int b)

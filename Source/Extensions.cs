@@ -38,13 +38,16 @@ namespace Svg
                 if (self)
                     yield return top;
 
-                var elements = new Stack<SvgElement>(top.Children.Reverse());
-                while (elements.Count > 0)
+                if (top.HasChildren())
                 {
-                    var element = elements.Pop();
-                    yield return element;
-                    foreach (var e in element.Children.Reverse())
-                        elements.Push(e);
+                    var elements = new Stack<SvgElement>(top.Children.Reverse());
+                    while (elements.Count > 0)
+                    {
+                        var element = elements.Pop();
+                        yield return element;
+                        foreach (var e in element.Children.Reverse())
+                            elements.Push(e);
+                    }
                 }
             }
             yield break;

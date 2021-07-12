@@ -18,7 +18,7 @@ namespace Svg
         {
             get
             {
-                if (_markerElement == null)
+                if (_markerElement == null && this.HasChildren())
                 {
                     _markerElement = (SvgVisualElement)this.Children.FirstOrDefault(x => x is SvgVisualElement);
                 }
@@ -231,7 +231,7 @@ namespace Svg
                         markerPath.Transform(transMatrix);
                         if (pRenderPen != null) pRenderer.DrawPath(pRenderPen, markerPath);
 
-                        SvgPaintServer pFill = this.Children.First().Fill;
+                        SvgPaintServer pFill = this.HasChildren() ? this.Children.First().Fill : null;
                         SvgFillRule pFillRule = FillRule;    // TODO: What do we use the fill rule for?
 
                         if (pFill != null)

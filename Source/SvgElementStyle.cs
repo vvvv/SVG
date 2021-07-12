@@ -29,9 +29,12 @@ namespace Svg
         public void InvalidateChildPaths()
         {
             this.IsPathDirty = true;
-            foreach (SvgElement element in this.Children)
+            if (this.HasChildren())
             {
-                element.InvalidateChildPaths();
+                foreach (SvgElement element in this.Children)
+                {
+                    element.InvalidateChildPaths();
+                }
             }
         }
 
