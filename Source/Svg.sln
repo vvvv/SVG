@@ -38,6 +38,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Svg.Benchmark", "..\Tests\S
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Generators", "Generators", "{FAFD6DC7-5203-4CED-A151-66379DD43695}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CodeGen", "CodeGen", "{89E4C74B-90F2-4ECF-BF21-497F782A7B4A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateStringHashCodes", "..\CodeGen\GenerateStringHashCodes\GenerateStringHashCodes.csproj", "{42694337-544C-424B-B505-8C61E417B97E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -84,6 +88,8 @@ Global
 		{8DEB3EA7-5915-4EB9-8052-85A7AC4379EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8DEB3EA7-5915-4EB9-8052-85A7AC4379EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8DEB3EA7-5915-4EB9-8052-85A7AC4379EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42694337-544C-424B-B505-8C61E417B97E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42694337-544C-424B-B505-8C61E417B97E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -98,6 +104,7 @@ Global
 		{9379360C-CB0B-4035-AE8F-8863A420FDCF} = {038E2E7B-BC03-4DA7-AA5F-CA8BD95BD0F2}
 		{BACDD1F4-B97D-4E27-BD09-6957633FF484} = {FAFD6DC7-5203-4CED-A151-66379DD43695}
 		{8DEB3EA7-5915-4EB9-8052-85A7AC4379EC} = {2EC3F3A0-F097-43EF-A603-9B82E3061469}
+		{42694337-544C-424B-B505-8C61E417B97E} = {89E4C74B-90F2-4ECF-BF21-497F782A7B4A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5096EEB3-8F41-44B5-BCF9-58743A59AB21}

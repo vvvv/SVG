@@ -10,11 +10,13 @@ namespace Svg
     {
         public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
         {
-            if (value is string)
+            if (value is string s1)
             {
-                var s = ((string)value).Trim();
+                var s = s1.Trim();
                 if (!string.IsNullOrEmpty(s))
+                {
                     return new SvgDeferredPaintServer(s);
+                }
             }
             return base.ConvertFrom(context, culture, value);
         }

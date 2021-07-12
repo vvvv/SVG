@@ -76,8 +76,8 @@ namespace Svg.UnitTests
             var doc = GenerateLexerTestFile("fill: #fff; stroke: 005577");
             var path = doc.GetElementById<SvgPath>("path1");
             Assert.AreEqual(System.Drawing.Color.White, ((SvgColourServer)path.Fill).Colour);
-            // default stroke color is null (transparent)
-            Assert.IsNull(path.Stroke);
+            // default stroke color is transparent
+            Assert.AreEqual(SvgPaintServer.NotSet, path.Stroke);
         }
 
         [Test]

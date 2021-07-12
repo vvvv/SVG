@@ -26,8 +26,9 @@ namespace Svg.Benchmark
             config.AddExporter(DefaultConfig.Instance.GetExporters().ToArray());
             config.AddColumnProvider(DefaultConfig.Instance.GetColumnProviders().ToArray());
             config.AddValidator(JitOptimizationsValidator.DontFailOnError);
+            //config.AddJob(job.WithRuntime(CoreRuntime.Core21));
             config.AddJob(job.WithRuntime(CoreRuntime.Core31));
-            //config.AddJob(job.WithRuntime(CoreRuntime.Core22));
+            //config.AddJob(job.WithRuntime(CoreRuntime.Core50));
             //config.AddJob(job.WithRuntime(ClrRuntime.Net461));
             config.AddDiagnoser(MemoryDiagnoser.Default);
             config.AddColumn(StatisticColumn.OperationsPerSecond);
